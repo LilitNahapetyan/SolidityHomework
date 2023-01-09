@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 contract ShareHolder {
     address private owner;
     mapping(address => uint) private shareholders;
-    uint private countOfShareHolders = 0;
     uint private totalPercentage = 0;
     address[] private sharholderList;
 
@@ -24,14 +23,12 @@ contract ShareHolder {
         require(totalPercentage <= 100,"You can not add Sharholders with that percentage");
         shareholders[shareholder] = percentage;
         sharholderList.push(shareholder);
-        countOfShareHolders ++;
     }
 
     // The deleteShareholder function allows the owner to remove a shareholder from the contract
     function deleteShareholder(address shareholder) public onlyOwner{
         totalPercentage -= shareholders[shareholder];
         delete shareholders[shareholder];
-        countOfShareHolders--;
     }
 
     function sendFunds() public payable {
