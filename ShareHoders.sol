@@ -5,7 +5,7 @@ contract ShareHolder {
     address private owner;
     mapping(address => uint) private shareholders;
     uint private totalPercentage = 0;
-    address[] private sharholderList;
+    address[] private shareholderList;
 
     constructor(){
         owner = msg.sender;
@@ -22,7 +22,7 @@ contract ShareHolder {
         totalPercentage += percentage;
         require(totalPercentage <= 100,"You can not add Sharholders with that percentage");
         shareholders[shareholder] = percentage;
-        sharholderList.push(shareholder);
+        shareholderList.push(shareholder);
     }
 
     // The deleteShareholder function allows the owner to remove a shareholder from the contract
@@ -33,11 +33,11 @@ contract ShareHolder {
 
     function sendFunds() public payable {
         require(msg.value > 0, "Cannot send 0 ether.");
-        for(uint i = 0; i < sharholderList.length; i++) {
-            uint percentage = shareholders[sharholderList[i]];
+        for(uint i = 0; i < shareholderList.length; i++) {
+            uint percentage = shareholders[shareholderList[i]];
             if(percentage != 0) {
                 uint share = msg.value * percentage / totalPercentage;
-                payable(sharholderList[i]).transfer(share);
+                payable(shareholderList[i]).transfer(share);
             }
         }
     }
