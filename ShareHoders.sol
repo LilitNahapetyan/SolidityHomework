@@ -29,6 +29,13 @@ contract ShareHolder {
     function deleteShareholder(address shareholder) public onlyOwner{
         totalPercentage -= shareholders[shareholder];
         delete shareholders[shareholder];
+        for(uint i = 0; i < shareholderList.length; i++){
+            if(shareholderList[i] == shareholder){
+                shareholderList[i] = shareholderList[shareholderList.length-1];
+                shareholderList.pop();
+                break;
+            }
+        }
     }
 
     function sendFunds() public payable {
