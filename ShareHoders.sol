@@ -1,36 +1,65 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-contract ShareHolder {
-    address private owner;
-    mapping(address => uint) private shareholders;
-    uint private totalPercentage = 0;
-    address[] private shareholderList;
+/**
+* @title ShareHolder
+* @dev this contract adds and removes users by the owner and transfer ether to
+* users according to their percentage.(for not keeping ether in the contract)
+*/
 
+contract ShareHolders {
+
+    /**
+    * @dev Throws if called by any account other than the owner.
+    */
+    modifier onlyOwner {
+        require(msg.sender == owner, "ShareHolder: You can not do this because you are not the owner.");
+        _;
+    }
+
+    address owner;
+    mapping(address => uint8) shareholders;
+    uint8 public totalPercentage;
+    address[] shareholderList;
+
+    /**
+    * The constructor initializes the owner.
+    */
     constructor(){
         owner = msg.sender;
     }
 
-    modifier onlyOwner {
-        require(msg.sender == owner, "You can not do this because you are not owner.");
-        _;
+    /**
+    * @dev receives ether and call sendfunds function.
+    */
+    receive() external payable {
+        sendFunds();
     }
    
-   // The addShareholder function allows the owner to add a shareholder to the contract
-    function addShareholder(address shareholder, uint percentage) public onlyOwner {
-        require(percentage > 0 && percentage <= 100, "Percentage must be greater than 0 and less than or equal to 100.");
-        totalPercentage += percentage;
-        require(totalPercentage <= 100,"You can not add Sharholders with that percentage");
-        shareholders[shareholder] = percentage;
-        shareholderList.push(shareholder);
+    /**
+    * @dev adds users.
+    * Note: the use of onlyOwner ensures that this function can call only owner.
+    * @param _shareholder the address of the user that should be added.
+    * @param _percentage the percentage that the user should receive from the amount.
+    */
+    function addShareholder(address _shareholder, uint8 _percentage) external onlyOwner {
+        require(totalPercentage + _percentage <= 100, "ShareHolder: You can not add Sharholders with that percentage");
+        totalPercentage += _percentage;
+        shareholders[_shareholder] = _percentage;
+        shareholderList.push(_shareholder);
     }
 
-    // The deleteShareholder function allows the owner to remove a shareholder from the contract
-    function deleteShareholder(address shareholder) public onlyOwner{
-        totalPercentage -= shareholders[shareholder];
-        delete shareholders[shareholder];
-        for(uint i = 0; i < shareholderList.length; i++){
-            if(shareholderList[i] == shareholder){
+    /**
+    * @dev removes users.
+    * Note: the use of onlyOwner ensures that this function can call only owner.
+    * @param _shareholder the address of the user that should be removed.
+    */
+    function deleteShareholder(address _shareholder) external onlyOwner{
+        require(shareholders[_shareholder] > 0, "ShareHolder: This user has 0 percentage or does not exist");
+        totalPercentage -= shareholders[_shareholder];
+        delete shareholders[_shareholder];
+        for(uint256 i; i < shareholderList.length; i++){
+            if(shareholderList[i] == _shareholder){
                 shareholderList[i] = shareholderList[shareholderList.length-1];
                 shareholderList.pop();
                 break;
@@ -38,21 +67,23 @@ contract ShareHolder {
         }
     }
 
-    function sendFunds() public payable {
-        require(msg.value > 0, "Cannot send 0 ether.");
-        for(uint i = 0; i < shareholderList.length; i++) {
-            uint percentage = shareholders[shareholderList[i]];
-            if(percentage != 0) {
-                uint share = msg.value * percentage / totalPercentage;
-                payable(shareholderList[i]).transfer(share);
-            }
-        }
+    /**
+    * @dev returns balance of contract.
+    */
+    function checkBalance() external view returns(uint) {
+        return address(this).balance;
     }
 
-    function checkBalance(address shareholder) public view returns(uint){
-        return shareholder.balance;
-    }
-    receive() external payable{
-        sendFunds();
+    /**
+    * @dev sends ethers to users corresponding to their percentage.
+    */
+    function sendFunds() private {
+        for(uint8 i; i < shareholderList.length; i++) {
+            uint8 percentage = shareholders[shareholderList[i]];
+            uint256 share = address(this).balance * percentage / totalPercentage;
+            payable(shareholderList[i]).transfer(share);
+        }
+        if(totalPercentage < 100)
+            payable(owner).transfer(address(this).balance);
     }
 }
