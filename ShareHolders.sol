@@ -9,31 +9,34 @@ pragma solidity ^0.8.17;
 
 contract ShareHolders {
 
+    mapping(address => uint8) shareholders;
+    uint8 public totalPercentage;
+    address payable[] shareholderList;
+
     /**
+    * The constructor initializes the owner.
+    */
+    address owner;
+    constructor(address  _owner){
+        owner = _owner;
+    }
+ 
+     /**
     * @dev Throws if called by any account other than the owner.
     */
     modifier onlyOwner {
         require(msg.sender == owner, "ShareHolder: You can not do this because you are not the owner.");
         _;
     }
-
-    address owner;
-    mapping(address => uint8) shareholders;
-    uint8 public totalPercentage;
-    address[] shareholderList;
-
-    /**
-    * The constructor initializes the owner.
-    */
-    constructor(){
-        owner = msg.sender;
-    }
-
+    
     /**
     * @dev receives ether and call sendfunds function.
     */
     receive() external payable {
         sendFunds();
+        // for(uint256 _index; _index < shareholderList.length; _index++) {
+        //     shareholderList[_index].transfer((address(this).balance * shareholders[shareholderList[_index]]) / 100);
+        // }
     }
    
     /**
@@ -42,7 +45,7 @@ contract ShareHolders {
     * @param _shareholder the address of the user that should be added.
     * @param _percentage the percentage that the user should receive from the amount.
     */
-    function addShareholder(address _shareholder, uint8 _percentage) external onlyOwner {
+    function addShareholder(address payable _shareholder, uint8 _percentage) external onlyOwner {
         require(totalPercentage + _percentage <= 100, "ShareHolder: You can not add Sharholders with that percentage");
         totalPercentage += _percentage;
         shareholders[_shareholder] = _percentage;
@@ -80,10 +83,8 @@ contract ShareHolders {
     function sendFunds() private {
         for(uint8 i; i < shareholderList.length; i++) {
             uint8 percentage = shareholders[shareholderList[i]];
-            uint256 share = address(this).balance * percentage / totalPercentage;
-            payable(shareholderList[i]).transfer(share);
+            shareholderList[i].transfer(address(this).balance * percentage / 100);
         }
-        if(totalPercentage < 100)
-            payable(owner).transfer(address(this).balance);
     }
 }
+
